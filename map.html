@@ -1,0 +1,337 @@
+<html>
+<head><script>
+
+// globals
+var gs = null;
+var pin = [0, 0];
+var state = "logic";
+
+var c =  null;
+var c2 =  null;
+var c3 =  null;
+
+var bs = [[0, "#1f1f1f"]];
+var filterslot = [
+	[0, -1],
+	[1, 0],
+	[0, 1],
+	[-1, 0]
+];
+
+// copy pasta from
+// https://stackoverflow.com/questions/1484506/random-color-generator
+function rngc() {
+  var letters = '0123456789ABCDEF';
+  var color = '#';
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+}
+// end
+
+
+// ############################################################################
+// ################################################################### tools ##
+// ############################################################################
+function getcol(val) {
+	for(n = 0; n < bs.length; n++) {
+		if(bs[n][0] == val) {
+			return bs[n][1];
+		}
+	}
+
+	var rngcache = rngc();
+	bs.push([val, rngcache]);
+	return rngcache;
+}
+
+function drawbox(x, y, col) {
+	var ccache = c.fillStyle;
+	c.fillStyle = col;
+	c.fillRect(x - 8, y - 8, 16, 16);
+	c.fillStyle = ccache;
+}
+
+function dbox(pnt, col, con) {
+	con.fillStyle = col;
+	con.fillRect(pnt[0] - 8, pnt[1] - 8, 16, 16);
+}
+
+function rnggs() {
+	var gst = [];
+	var line = [];
+	for(y = 0; y < 4; y++) {
+		line = [];
+		for(x = 0; x < 4; x++) {
+			line.push(
+				Math.round(
+				Math.random()));
+		}
+		gst.push(line);
+	}
+
+	return gst
+}
+
+function rngpin() {
+	pin[0] = Math.round(Math.random() * 2 - 1);
+	pin[1] = Math.round(Math.random() * 2 - 1);
+
+	while(Math.abs(pin[0]) == Math.abs(pin[1])) {
+		pin[0] = Math.round(Math.random() * 2 - 1);
+		pin[1] = Math.round(Math.random() * 2 - 1);
+	}
+}
+
+function frees(pnt) {
+	if(gs[pnt[1]][pnt[0]] == 0) { return true; }
+	else { return false; }
+}
+
+function ongrid(pnt) {
+	if(pnt[0] >= 0 && pnt[0] < 4 &&
+		pnt[1] >= 0 && pnt[1] < 4) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function newblock() {
+	var nbcache = -1;
+	for(y = 0; y < 4; y++) {
+		if(nbcache == -1 && gs[y].indexOf(0) != -1) {
+			nbcache = gs[y].indexOf(0);
+		}
+	}
+
+	if(nbcache != -1) {
+		rngspwn = [Math.round(Math.random() * 3),
+			Math.round(Math.random() * 3)];
+		while(!frees(rngspwn)) {
+			rngspwn = [Math.round(Math.random() * 3),
+				Math.round(Math.random() * 3)];
+		}
+
+		gs[rngspwn[1]][rngspwn[0]] = 1;
+	}
+}
+
+function fullgrid() {
+	for(y = 0; y < 4; y++) {
+		for(x = 0; x < 4; x++) {
+			if(gs[y][x] == 0) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+var gnxt = null;
+function griddead() {
+	for(y = 0; y < 4; y++) {
+		for(x = 0; x < 4; x++) {
+			for(n = 0; n < filterslot.length; n++) {
+				gnxt = [x + filterslot[n][0], y + filterslot[n][1]];
+				if(!ongrid(gnxt)) { continue; }
+
+				if(gs[y][x] == gs[gnxt[1]][gnxt[0]]) {
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+
+
+
+// ############################################################################
+// ########################################################## draw functions ##
+// ############################################################################
+var col = null;
+var gap = 24;
+var size = 128;
+
+var numcahce = null;
+var nxtpnt = null;
+
+
+function drawgs() {
+	for(y = 0; y < gs.length; y++) {
+		for(x = 0; x < gs[y].length; x++) {
+			col = getcol(gs[y][x]);
+			// col = scalec(gs[y][x]);
+
+			drawbox(
+				x * gap + (size -
+				(gs[y].length - 1) * gap) / 2,
+				y * gap + (size -
+				(gs.length - 1) * gap) / 2,
+				col);
+		}
+	}
+}
+
+function drawmw() {
+	for(y = 0; y < 4; y++) {
+		for(x = 0; x < 4; x++) {
+			numcahce = 0;
+			for(n = 0; n < filterslot.length; n++) {
+				nxtpnt = [x + filterslot[n][0], y + filterslot[n][1]];
+				if(ongrid(nxtpnt)) {
+					if(gs[y][x] == gs[nxtpnt[1]][nxtpnt[0]] &&
+						gs[y][x] != 0) {
+						numcahce += 1;
+					}
+				}
+			}
+
+			if(numcahce > 0) {
+				c2.fillStyle = "#FF00FF";
+				c2.fillRect(x * 16, y * 16, 16, 16);
+			} else {
+				c2.fillStyle = "#000000";
+				c2.fillRect(x * 16, y * 16, 16, 16);
+			}
+		}
+	}
+}
+
+function drawstate() {
+	switch (state) {
+		case "logic":
+			dbox([8, 8], "#8dee11", c3);
+			break;
+
+		case "move":
+			dbox([8, 8], "#317f8c", c3);
+			break;
+
+		default:
+			break;
+	}
+}
+
+
+
+
+// ############################################################################
+// #################################################################### main ##
+// ############################################################################
+
+var modcache = false;
+var nxt = null;
+var rngspwn = null;
+function main() {
+	// ### game state logic ##
+	// #######################
+	switch(state) {
+		case "logic":
+			// dead game check
+			if(fullgrid() && griddead()) {
+				gs = rnggs();
+			}
+
+			// get rng player in
+			rngpin();
+			state = "move";
+			break;
+
+		case "move":
+			// cache game state to compair latter
+			gscache = gs;
+			modcache = false;
+
+			for(y = 0; y < 4; y++) {
+				for(x = 0; x < 4; x++) {
+					nxt = [x + pin[0], y + pin[1]];
+
+					if(ongrid(nxt) && gs[y][x] > 0) {
+						if(frees(nxt)) {
+							gs[nxt[1]][nxt[0]] = gs[y][x];
+							gs[y][x] = 0;
+							modcache = true;
+						} else if(gs[y][x] == gs[nxt[1]][nxt[0]]) {
+							gs[nxt[1]][nxt[0]] = gs[y][x] + gs[nxt[1]][nxt[0]];
+							gs[y][x] = 0;
+							modcache = true;
+						}
+					}
+				}
+			}
+
+			if(!modcache) {
+				state = "logic";
+				newblock();
+				gs[rngspwn[1]][rngspwn[0]] = 1;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+
+	// ######### draw logic ##
+	// #######################
+	c.clearRect(0, 0, 128, 128);
+	c2.clearRect(0, 0, 128, 128);
+	c3.clearRect(0, 0, 256, 256);
+
+	// draw player in
+	dbox([pin[0] * 16 + 32, pin[1] * 16 + 48], "#acde1d", c3);
+
+	// draw game state
+	drawgs();
+
+	// draw debug tools
+	drawmw();
+
+	// draw state
+	drawstate();
+
+
+	// set frame loop
+	requestAnimationFrame(main);
+	// setTimeout(main, 128);
+}
+
+function init() {
+	// get main game context
+	c = document
+		.getElementById("c")
+		.getContext("2d");
+
+	// get debut context
+	c2 = document
+		.getElementById("c2")
+		.getContext("2d");
+
+	c3 = document
+		.getElementById("c3")
+		.getContext("2d");
+
+	//dbox([8, 8], "#FF00FF", c3);
+	// c3.fillStyle = "#FF00FF";
+	// c3.fillRect(0, 0, 256, 256);
+
+	// flood fill game state with noise
+	gs = rnggs();
+
+	// call game loop
+	main();
+}
+
+</script></head>
+<body bgcolor = "#0F0F0F" onload = "init()">
+<canvas id = "c" width = "128" height = "128"></canvas>
+<canvas id = "c2" width = "128" height = "128"></canvas>
+<canvas id = "c3" width = "256" height = "256"></canvas>
+</body>
+</html>
