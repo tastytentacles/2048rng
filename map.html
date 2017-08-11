@@ -148,6 +148,38 @@ function griddead() {
 	return true;
 }
 
+function onestep() {
+	for(y = 0; y < 4; y++) {
+		for(x = 0; x < 4; x++) {
+			if(ongrid([x + pin[0], y + pin[1]]) && gs[y][x] != 0) {
+				if(frees([x + pin[0], y + pin[1]])) {
+					gs[y + pin[1]][x + pin[0]] = gs[y][x];
+					gs[y][x] = 0;
+				} else if(gs[y][x] == gs[y + pin[1]][x + pin[0]]) {
+					gs[y + pin[1]][x + pin[0]] = gs[y][x] + gs[y + pin[1]][x + pin[0]];
+					gs[y][x] = 0;
+				}
+			}
+		}
+	}
+}
+
+var gridvalue = null;
+function getstepvalue() {
+	gridvalue = 0;
+	for(y = 0; y < 4; y++) {
+		for(x = 0; x < 4; x++) {
+			if(ongrid([x + pin[0], y + pin[1]]) && gs[y][x] != 0) {
+				if(frees([x + pin[0], y + pin[1]]) ||
+					gs[y + pin[1]][x + pin[0]] == gs[y][x])
+					{ gridvalue += 1; }
+			}
+		}
+	}
+
+	return gridvalue;
+}
+
 
 
 
@@ -201,6 +233,29 @@ function drawmw() {
 			}
 		}
 	}
+
+	for(y = 0; y < 4; y++) {
+		for(x = 0; x < 4; x++) {
+			numcahce = 0;
+			for(n = 0; n < filterslot.length; n++) {
+				nxtpnt = [x + filterslot[n][0], y + filterslot[n][1]];
+				if(ongrid(nxtpnt)) {
+					if(gs[nxtpnt[1]][nxtpnt[0]] == 0 &&
+						gs[y][x]) {
+						numcahce += 1;
+					}
+				}
+			}
+
+			if(numcahce > 0) {
+				c2.fillStyle = "#00FF00";
+				c2.fillRect(x * 16, y * 16 + 64, 16, 16);
+			} else {
+				c2.fillStyle = "#000000";
+				c2.fillRect(x * 16, y * 16 + 64, 16, 16);
+			}
+		}
+	}
 }
 
 function drawstate() {
@@ -245,32 +300,20 @@ function main() {
 
 		case "move":
 			// cache game state to compair latter
-			gscache = gs;
-			modcache = false;
+			// gscache = gs;
+			// modcache = false;
 
-			for(y = 0; y < 4; y++) {
-				for(x = 0; x < 4; x++) {
-					nxt = [x + pin[0], y + pin[1]];
-
-					if(ongrid(nxt) && gs[y][x] > 0) {
-						if(frees(nxt)) {
-							gs[nxt[1]][nxt[0]] = gs[y][x];
-							gs[y][x] = 0;
-							modcache = true;
-						} else if(gs[y][x] == gs[nxt[1]][nxt[0]]) {
-							gs[nxt[1]][nxt[0]] = gs[y][x] + gs[nxt[1]][nxt[0]];
-							gs[y][x] = 0;
-							modcache = true;
-						}
-					}
-				}
+			while(getstepvalue() > 0) {
+				onestep();
 			}
 
-			if(!modcache) {
-				state = "logic";
-				newblock();
-				gs[rngspwn[1]][rngspwn[0]] = 1;
-			}
+			state = "logic";
+			newblock();
+
+			// if(getstepvalue() < 1) {
+
+				//gs[rngspwn[1]][rngspwn[0]] = 1;
+			// }
 			break;
 
 		default:
@@ -298,8 +341,8 @@ function main() {
 
 
 	// set frame loop
-	requestAnimationFrame(main);
-	// setTimeout(main, 128);
+	// requestAnimationFrame(main);
+	setTimeout(main, 512);
 }
 
 function init() {
