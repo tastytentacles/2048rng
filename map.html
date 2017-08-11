@@ -273,6 +273,10 @@ function drawstate() {
 	}
 }
 
+function drawvalueovertime() {
+
+}
+
 
 
 
@@ -299,10 +303,6 @@ function main() {
 			break;
 
 		case "move":
-			// cache game state to compair latter
-			// gscache = gs;
-			// modcache = false;
-
 			while(getstepvalue() > 0) {
 				onestep();
 			}
@@ -342,7 +342,7 @@ function main() {
 
 	// set frame loop
 	// requestAnimationFrame(main);
-	setTimeout(main, 512);
+	setTimeout(main, 256);
 }
 
 function init() {
@@ -359,10 +359,6 @@ function init() {
 	c3 = document
 		.getElementById("c3")
 		.getContext("2d");
-
-	//dbox([8, 8], "#FF00FF", c3);
-	// c3.fillStyle = "#FF00FF";
-	// c3.fillRect(0, 0, 256, 256);
 
 	// flood fill game state with noise
 	gs = rnggs();
